@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -15,9 +15,22 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 client.connect(err => {
     console.log('database connected')
-//   const collection = client.db("test").collection("devices");
-  // perform actions on the collection object
-//   client.close();
+    const vegCollection = client.db("warehouse").collection("vegetables");
+
+    //all
+    app.get('/vegetables',async(req, res)=>{
+        const query = {};
+        const cursor = vegCollection.find(query);
+        const vegetables = await cursor.toArray();
+        res.send(vegetables);
+    })
+    //load by id
+    app.get('/vegetable',async(req, res)=>{
+        const {id} = req.query;
+        const query = { _id: ObjectId(id) }
+        const vegetable = await vegCollection.findOne(query);
+        res.send(vegetable);
+    })
 });
 
 
