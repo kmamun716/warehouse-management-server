@@ -3,9 +3,15 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
+const corsOptions ={
+    origin:'*', 
+    credentials:true,            //access-control-allow-credentials:true
+    optionSuccessStatus:200,
+ }
+
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 
 
 const port = process.env.PORT || 4000;
@@ -30,6 +36,20 @@ client.connect(err => {
         const query = { _id: ObjectId(id) }
         const vegetable = await vegCollection.findOne(query);
         res.send(vegetable);
+    })
+    // sell Item
+    app.put('/vegetable/:id',async(req, res)=>{
+        const {id} = req.params;
+        const {newQty} = req.body;
+        const filter = { _id: ObjectId(id) }
+        const options = {upsert : true}
+        const updatedDoc = {
+            $set: {
+                qty: newQty
+            }
+        }
+        const vegetable = await vegCollection.updateOne(filter, updatedDoc, options);
+        res.send(vegetable)
     })
 });
 
