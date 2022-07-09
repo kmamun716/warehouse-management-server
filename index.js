@@ -30,6 +30,12 @@ client.connect(err => {
         const vegetables = await cursor.toArray();
         res.send(vegetables);
     })
+    //add product
+    app.post('/addProduct',async(req,res)=>{
+        const product = req.body;
+        const result = await vegCollection.insertOne(product);
+        res.send(result)
+    })
     //load by id
     app.get('/vegetable',async(req, res)=>{
         const {id} = req.query;
