@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const corsOptions = {
@@ -22,9 +23,34 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorize access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden Access" });
+    } else {
+      console.log(decoded);
+      req.decoded = decoded;
+      next();
+    }
+  });
+};
+
 client.connect((err) => {
   console.log("database connected");
   const vegCollection = client.db("warehouse").collection("vegetables");
+
+  //Auth
+  app.post("/login", async (req, res) => {
+    const user = req.body;
+    const token = jwt.sign(user, process.env.SECRET, { expiresIn: "2h" });
+    res.send({ token });
+  });
 
   //all
   app.get("/vegetables", async (req, res) => {
@@ -65,7 +91,6 @@ client.connect((err) => {
   });
   //load data according to pagination section finish
 
-
   //load by id
   app.get("/vegetable", async (req, res) => {
     const { id } = req.query;
@@ -93,21 +118,25 @@ client.connect((err) => {
   });
 
   //delete item
-  app.delete('/product/:id', async(req, res)=>{
+  app.delete("/product/:id", async (req, res) => {
     const id = req.params.id;
     const query = { _id: ObjectId(id) };
     const result = await vegCollection.deleteOne(query);
-    res.send(result)
-  })
+    res.send(result);
+  });
 
   //get product by user
-  app.get('/myProduct',async(req, res)=>{
+  app.get("/myProduct", verifyToken, async (req, res) => {
+    const decodedEmail = req.decoded.email;
     const email = req.query.email;
-    const products = await vegCollection.find({email}).toArray();
-    res.send(products);
-  })
+    if (decodedEmail === email) {
+      const products = await vegCollection.find({ email }).toArray();
+      res.send(products);
+    }else{
+      res.status(403).send({message: "Forbidden Access"})
+    }
+  });
 });
-
 
 //basic route
 app.get("/", (req, res) => {
