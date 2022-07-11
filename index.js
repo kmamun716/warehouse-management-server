@@ -91,7 +91,23 @@ client.connect((err) => {
     );
     res.send(vegetable);
   });
+
+  //delete item
+  app.delete('/product/:id', async(req, res)=>{
+    const id = req.params.id;
+    const query = { _id: ObjectId(id) };
+    const result = await vegCollection.deleteOne(query);
+    res.send(result)
+  })
+
+  //get product by user
+  app.get('/myProduct',async(req, res)=>{
+    const email = req.query.email;
+    const products = await vegCollection.find({email}).toArray();
+    res.send(products);
+  })
 });
+
 
 //basic route
 app.get("/", (req, res) => {
